@@ -762,6 +762,9 @@ L.Control.Elevation = L.Control.extend({
 		.attr("cx", 10).attr("cy", 10).attr("r", 5)
 		.attr("stroke", "black").attr("stroke-width", 1).attr("fill", "none")
 		.attr("visibility", "hidden");
+
+	this._circle.on("mouseover", this._mouseOverMarker.bind(this)).
+		on("mouseout", this._mouseOutMarker.bind(this));
     },
 
     moveMarker: function(ev) {
@@ -774,6 +777,14 @@ L.Control.Elevation = L.Control.extend({
 	this._circle.attr("cy", y_coord);
 	this._circle_out.attr("cx", x_coord);
 	this._circle_out.attr("cy", y_coord);
+    },
+
+    _mouseOverMarker: function(d, i, ctx) {
+	this._circle_out.attr("visibility", "visible");
+    },
+
+    _mouseOutMarker: function(d, i, ctx) {
+	this._circle_out.attr("visibility", "hidden");
     },
 
     /*
