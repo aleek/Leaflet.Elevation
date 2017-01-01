@@ -47,9 +47,6 @@ var gjl = L.geoJson(geojson,{
 
 map.addLayer(service).fitBounds(bounds);
 
-//var marker = L.marker(geojson.features[0].geometry.coordinates[0]);
-//marker.addTo(map);
-
 var marker = new L.ELMarker(geojson.features[0].geometry.coordinates[0]);
 marker.addTo(map).addToEl(el);
 
@@ -68,14 +65,6 @@ var moveMarker = function() {
 }
 
 var interval = setInterval(moveMarker, 1000);
-
-el.addMarker(marker);
-
-
-
-
-
-
 
 	</script>
 </body>

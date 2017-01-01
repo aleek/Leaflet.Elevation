@@ -743,54 +743,6 @@ L.Control.Elevation = L.Control.extend({
     },
 
     /*
-     * This one adds Marker to the Elevation windows,
-     * and sets up and event to move the marker
-     * every time its position is changed
-     */
-    _markers: {},
-    _circle: {},
-    _circle_out: {},
-    addMarker: function(marker) {
-	this._markers[marker._leaflet_id] = marker;
-	marker.on("move", this.moveMarker.bind(this));
-	    
-        var g = d3.select(this._container).select("svg").select("g");
-	this._circle = g.append("circle")
-		.attr("cx", 10).attr("cy", 10).attr("r", 3);
-
-	this._circle_out = g.append("circle")
-		.attr("cx", 10).attr("cy", 10).attr("r", 5)
-		.attr("stroke", "black").attr("stroke-width", 1).attr("fill", "none")
-		.attr("visibility", "hidden");
-
-	this._circle.on("mouseover", this._mouseOverMarker.bind(this)).
-		on("mouseout", this._mouseOutMarker.bind(this));
-    },
-
-    moveMarker: function(ev) {
-        var item = this._findItemForLatLng(ev.latlng);
-
-	var x_coord = this._x(item.dist);
-	var y_coord = this._y(item.altitude);
-
-	this._circle.attr("cx", x_coord);
-	this._circle.attr("cy", y_coord);
-	this._circle_out.attr("cx", x_coord);
-	this._circle_out.attr("cy", y_coord);
-    },
-
-    _mouseOverMarker: function(d, i, ctx) {
-	this._circle_out.attr("visibility", "visible");
-	console.log(d);
-	console.log(i);
-	console.log(ctx);
-    },
-
-    _mouseOutMarker: function(d, i, ctx) {
-	this._circle_out.attr("visibility", "hidden");
-    },
-
-    /*
      * Reset data
      */
     _clearData: function() {
@@ -879,8 +831,8 @@ L.ELMarker = L.Marker.extend({
 		this._circle.attr("cy", y_coord);
 		this._circle_out.attr("cx", x_coord);
 		this._circle_out.attr("cy", y_coord);
-	}
-/*
+	},
+
 	_mouseOverMarker: function(d, i, ctx) {
 		this._circle_out.attr("visibility", "visible");
 	},
@@ -888,7 +840,6 @@ L.ELMarker = L.Marker.extend({
 	_mouseOutMarker: function(d, i, ctx) {
 		this._circle_out.attr("visibility", "hidden");
 	}
-	*/
 });
 	
 
