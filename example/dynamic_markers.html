@@ -40,15 +40,18 @@
 ]}
 ;
 var el = L.control.elevation({width: 1200});
-		el.addTo(map);
-		var gjl = L.geoJson(geojson,{
-		    onEachFeature: el.addData.bind(el)
-		}).addTo(map);
+el.addTo(map);
+var gjl = L.geoJson(geojson,{
+    onEachFeature: el.addData.bind(el)
+}).addTo(map);
 
-		map.addLayer(service).fitBounds(bounds);
+map.addLayer(service).fitBounds(bounds);
 
-var marker = L.marker(geojson.features[0].geometry.coordinates[0]);
-marker.addTo(map);
+//var marker = L.marker(geojson.features[0].geometry.coordinates[0]);
+//marker.addTo(map);
+
+var marker = new L.ELMarker(geojson.features[0].geometry.coordinates[0]);
+marker.addTo(map).addToEl(el);
 
 
 

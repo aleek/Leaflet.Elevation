@@ -756,7 +756,7 @@ L.Control.Elevation = L.Control.extend({
 	    
         var g = d3.select(this._container).select("svg").select("g");
 	this._circle = g.append("circle")
-		.attr("cx", 10).attr("cy", 10).attr("r", 3)
+		.attr("cx", 10).attr("cy", 10).attr("r", 3);
 
 	this._circle_out = g.append("circle")
 		.attr("cx", 10).attr("cy", 10).attr("r", 5)
@@ -781,6 +781,9 @@ L.Control.Elevation = L.Control.extend({
 
     _mouseOverMarker: function(d, i, ctx) {
 	this._circle_out.attr("visibility", "visible");
+	console.log(d);
+	console.log(i);
+	console.log(ctx);
     },
 
     _mouseOutMarker: function(d, i, ctx) {
@@ -828,3 +831,66 @@ L.Control.Elevation = L.Control.extend({
 L.control.elevation = function(options) {
     return new L.Control.Elevation(options);
 };
+
+
+
+L.ELMarker = L.Marker.extend({
+	_circle: null,
+	_circle_out: null,
+	_elevation: null,
+
+	/*
+	initialize: function(name, options) {
+		this.name = name;
+		L.setOptions(this, options);
+	},
+	*/
+
+	/* 
+	 * We do not overload onAdd function, because the marker
+	 * needs to be add to both map, and elevation window
+	 */
+	addToEl: function(el) {
+		this._elevation = el;
+		//this._marker.on("move", this.moveMarker.bind(this));
+	    
+        	var g = d3.select(this._elevation._container).select("svg").select("g");
+		this._circle = g.append("circle")
+			.attr("cx", 10).attr("cy", 10).attr("r", 3);
+
+		this._circle_out = g.append("circle")
+			.attr("cx", 10).attr("cy", 10).attr("r", 5)
+			.attr("stroke", "black").attr("stroke-width", 1).attr("fill", "none")
+			.attr("visibility", "hidden");
+
+		//this._circle.on("mouseover", this._mouseOverMarker.bind(this)).
+		//	on("mouseout", this._mouseOutMarker.bind(this));
+		return this;
+	},
+
+	setLatLng: function(latlng) {
+		L.Marker.prototype.setLatLng.call(this, latlng);
+	        var item = this._elevation._findItemForLatLng(latlng);
+
+		var x_coord = this._elevation._x(item.dist);
+		var y_coord = this._elevation._y(item.altitude);
+
+		this._circle.attr("cx", x_coord);
+		this._circle.attr("cy", y_coord);
+		this._circle_out.attr("cx", x_coord);
+		this._circle_out.attr("cy", y_coord);
+	}
+/*
+	_mouseOverMarker: function(d, i, ctx) {
+		this._circle_out.attr("visibility", "visible");
+	},
+
+	_mouseOutMarker: function(d, i, ctx) {
+		this._circle_out.attr("visibility", "hidden");
+	}
+	*/
+});
+	
+
+	
+
