@@ -787,6 +787,11 @@ L.control.elevation = function(options) {
 
 
 L.ELMarker = L.Marker.extend({
+	options: {
+		radius: 3,
+		color: "black",
+		animation: true
+	},
 	_circle: null,
 	_circle_out: null,
 	_elevation: null,
@@ -804,6 +809,7 @@ L.ELMarker = L.Marker.extend({
 	 */
 	addToEl: function(el) {
 		this._elevation = el;
+		console.log(this.options);
 		//this._marker.on("move", this.moveMarker.bind(this));
 	    
         	var g = d3.select(this._elevation._container).select("svg").select("g");
@@ -815,8 +821,8 @@ L.ELMarker = L.Marker.extend({
 			.attr("stroke", "black").attr("stroke-width", 1).attr("fill", "none")
 			.attr("visibility", "hidden");
 
-		//this._circle.on("mouseover", this._mouseOverMarker.bind(this)).
-		//	on("mouseout", this._mouseOutMarker.bind(this));
+		this._circle.on("mouseover", this._mouseOverMarker.bind(this)).
+			on("mouseout", this._mouseOutMarker.bind(this));
 		return this;
 	},
 
