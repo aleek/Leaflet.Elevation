@@ -174,13 +174,54 @@ L.Control.Graph = L.Control.extend({
 	},
 
 	showData: function(name, x, y, opts) {
+		if (typeof this._data[name] === "undefined") {
+			throw "Data "+ name +" does not exists."
+			return;
+		}
+		var anim = opts.anim || this.options.animation;
+		var type = opts.type || "area";
+
+		this.setXdomain(name, x);
+		this.setYdomain(name, y);
+
+		var datum = this._data[name].d;
+		var vis = {};
+		vis.name = name;
+		var x_scale = this._x_scale;
+		var y_scale = this._y_scale;
+
+		if (type == "area") {
+			vis.graph = d3.svg.area()
+				.interpolate(this.options.interpolation)
+				.x(function(d) { return x_scale(x(d)) })
+				.y0(this._height()) // bottom of area
+				.y1(function(d) { return y_scale(y(d)) }); // top of area
+		}
+		else if(type == "line") {
+			vis.graph = d3.svg.line()
+				.x(function(d) { return x_scale(x(d)) })
+				.y(function(d) { return y_scale(y(d)) }); // top of area
+		}
+
+		vis.path = this._h_g.append("path").attr("class", "area");
+		vis.path.datum(datum).attr("d", vis.graph);
+		if (type == "line") {
+			/* @TODO adjust styles */
+			vis.path.attr("fill", "none")
+			      .attr("stroke", "steelblue")
+			      .attr("stroke-linejoin", "round")
+			      .attr("stroke-linecap", "round")
+			      .attr("stroke-width", 1.5);
+		}
+		this._data_vis[name] = vis;
 	},
 
-	setXdomain: function(data_name, func) {
-		if (typeof this._data[data_name] === "undefined") {
-			return [];
+	setXdomain: function(name, func) {
+		if (typeof this._data[name] === "undefined") {
+			throw "Data "+ name +" does not exists."
+			return;
 		}
-		var d = d3.extent(this._data[data_name].d, func);
+		var d = d3.extent(this._data[name].d, func);
 		this._x_scale.domain(d);
 		/* TODO animation */
 		this._h_x_axis.call(this._x_axis);
