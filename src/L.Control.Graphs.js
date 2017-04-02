@@ -78,6 +78,12 @@ L.Control.Graph = L.Control.extend({
 	_x_axis: undefined,
 	_y_axis: undefined,
 
+	/* 
+	 * linerar scales, used to scale the metric to pixels
+	 */
+	_x_scale: undefined,
+	_y_scale: undefined,
+
     onRemove: function(map) {
         this._h_div = null;
     },
@@ -107,28 +113,30 @@ L.Control.Graph = L.Control.extend({
 			.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 		/* Create scales */
-		var x = this._x = d3.scale.linear()
+		var x = this._x_scale = d3.scale.linear()
 			.range([0, this._width()])
 			.domain([0,1]);
 
-		var y = this._y = d3.scale.linear()
+		var y = this._y_scale = d3.scale.linear()
 			.range([this._height(), 0])
 			.domain([0,1]);
 
 		/* create X and Y axis */
-		this._h_x_axis = g.append("g");
-		this._h_y_axis = g.append("g");
-
+		/* Those two are for calucations... */
 		this._x_axis = d3.svg.axis()
-			.scale(this._x)
+			.scale(this._x_scale)
 			.ticks(this.options.xTicks)
 			.orient("bottom");
 
 		this._y_axis = d3.svg.axis()
-			.scale(this._y)
+			.scale(this._y_scale)
 			.ticks(this.options.yTicks)
 			.orient("left");
 
+		this._h_x_axis = g.append("g");
+		this._h_y_axis = g.append("g");
+
+		/* ...and those two are for displaying */
 		this._h_x_axis.attr("class", "x axis")
 			.attr("transform", "translate(0," + this._height() + ")")
 			.call(this._x_axis)
@@ -156,18 +164,38 @@ L.Control.Graph = L.Control.extend({
 	 * }
 	 */
 	addData: function(name, d) {
-		var data = this._data[name] || []
+		if (typeof this._data[name] === "undefined") {
+			this._data[name] = {};
+		}
+		var entry = this._data[name];
+		var data = this._data[name].d || []
 		data = data.concat(d);
-		this._data[name] = data;
+		entry.d = data;
 	},
 
 	showData: function(name, x, y, opts) {
 	},
 
 	setXdomain: function(data_name, func) {
+		if (typeof this._data[data_name] === "undefined") {
+			return [];
+		}
+		var d = d3.extent(this._data[data_name].d, func);
+		this._x_scale.domain(d);
+		/* TODO animation */
+		this._h_x_axis.call(this._x_axis);
+		return d;
 	},
 
 	setYdomain: function(data_name, func) {
+		if (typeof this._data[data_name] === "undefined") {
+			return;
+		}
+		var d = d3.extent(this._data[data_name].d, func);
+		this._y_scale.domain(d);
+		/* TODO animation */
+		this._h_y_axis.call(this._y_axis);
+		return d;
 	},
 
     _width: function() {
@@ -179,6 +207,28 @@ L.Control.Graph = L.Control.extend({
         var opts = this.options;
         return opts.height - opts.margins.top - opts.margins.bottom;
     },
+
+	processData: function(name) {
+		if( typeof this._data[name] === "undefined") {
+			return;
+		}
+		var opts = this.options;
+		var data = this._data[name];
+		data.dist = 0;
+		data.max_ele = 0;
+
+		for (var i=0; i<data.d.length; i++) {
+			var s = new L.LatLng(data.d[i].lla[1], data.d[i].lla[0]);
+			var e = new L.LatLng(data.d[i ? i - 1 : 0].lla[1], data.d[i ? i - 1 : 0].lla[0]);
+			var newdist = s.distanceTo(e);
+			data.dist = data.dist + Math.round(newdist / 1000 * 100000) / 100000;
+			data.max_ele = data.max_ele < data.d[i].lla[2] ? data.d[i].lla[2] : data.max_ele;
+
+			data.d[i].dist = data.dist;
+			data.d[i].latlng = s;
+		}
+	},
+		
 });
 
 L.control.graph = function(options) {
