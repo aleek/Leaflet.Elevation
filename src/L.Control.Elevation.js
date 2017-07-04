@@ -18,7 +18,7 @@ L.Control.Elevation = L.Control.extend({
             formatter: undefined
         },
         xTicks: undefined,
-        yTicks: undefined,
+        yTicks: undef:ined,
         collapsed: false,
         yAxisMin: undefined,
         yAxisMax: undefined,
@@ -29,6 +29,73 @@ L.Control.Elevation = L.Control.extend({
         },
         imperial: false
     },
+
+	/*
+	 * Instance of Leaflet map, that the Chart is shown on
+	 */
+	_map: undefined,
+
+	/*
+	 * d3.scale instances
+	 */
+	_x: undefined,
+	_y: undefined,
+
+	/*
+	 * <div> element. Highest in the hierarchy.
+	 *
+	 * The hierarchy:
+	 * <div _container>
+	 *   <svg>
+	 *     <g>
+	 *       <path elevation>
+	 *       <rect background>
+	 *       <g x axis>
+	 *       <g y axis>
+	 *       <g marker>
+	 */
+	_container: undefined,
+
+	/*
+	 *
+	 */
+	_svg: undefined,
+
+	/*
+	 * Top svg <g> container
+	 */
+	_g_cont: undefined,
+
+	/* 
+	 * svg <path> for elevation
+	 * Shows the path of this._area.
+	 */
+	_areapath: undefined,
+
+	/*
+	 * d3.svg.area(), the object used to paint the <path> from data
+	 */
+	_area: undefined,
+
+	/*
+	 * background, transparent svg <rect>, used to navigate the
+	 * height marker...
+	 */
+	_background: undefined,
+
+	/*
+	 * ... and the marker itself
+	 */
+	_focusG: undefined,
+	_focuslabelX: undefined,
+	_focuslabelY: undefined,
+
+	/*
+	 * <g> for X and Y axises
+	 */
+	_xaxisgraphicnode: undefined,
+	_yaxisgraphicnode: undefined,
+
     __mileFactor: 0.621371,
     __footFactor: 3.28084,
 
@@ -70,13 +137,17 @@ L.Control.Elevation = L.Control.extend({
 
         var cont = d3.select(container);
         cont.attr("width", opts.width);
-        var svg = cont.append("svg");
+        var svg = this._svg = cont.append("svg");
         svg.attr("width", opts.width)
             .attr("class", "background")
-            .attr("height", opts.height)
-            .append("g")
+            .attr("height", opts.height);
+
+		var g = this._g_cont = svg.append("g")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+		/*
+		 * The vertical marker in Elevation window under mouse
+		 */
         var line = d3.svg.line();
         line = line
             .x(function(d) {
@@ -85,8 +156,6 @@ L.Control.Elevation = L.Control.extend({
             .y(function(d) {
                 return this._height();
             });
-
-        var g = d3.select(this._container).select("svg").select("g");
 
         this._areapath = g.append("path")
             .attr("class", "area");
@@ -777,7 +846,6 @@ L.Control.Elevation = L.Control.extend({
     show: function() {
         this._container.style.display = "block";
     }
-
 });
 
 L.control.elevation = function(options) {
