@@ -319,6 +319,7 @@ L.Control.Graph.PlotSpace = L.Control.extend({
 
 	_map: undefined,
 	_graph: undefined,
+
 	d3js: {
 		svg: undefined,
 		g: undefined,
@@ -456,7 +457,47 @@ L.Control.Graph.PlotSpace = L.Control.extend({
 		return this.__height_px;
 	},
 
-	addDatum: function(name, d) {
+	addData: function(name, d) {
+		this._data = d;
+	},
+
+	/*
+	 * opts: {
+	 *     interpolate: true/false,
+	 *     interpolation_trigger: [n] - value in meters, if the distance 
+	 *         between two points is less that n meters, it will interpolate
+	 *         the intermediate points
+	 * }
+	 */
+	processData: function(opts) {
+		var data = this._data;
+		var ndata = [];
+
+		var min_ele = 8848; // Mt Everest
+		var max_ele = -10994; // Mariana Trench
+		var dist = 0;
+
+		for (var i=0; i<data.length; i++) {
+			var s = new L.LatLng(data[i].lla[1], data[i].lla[0]);
+			var e = new L.LatLng(data[i ? i - 1 : 0].lla[1], data[i ? i - 1 : 0].lla[0]);
+			var d_dist = s.distanceTo(e);
+			console.log(d_dist);
+			dist = dist + d_dist; // Math.round(d_dist / 1000 * 100000) / 100000;
+
+			/* 2. maximum elevation */
+			max_ele = max_ele < data[i].lla[2] ? data[i].lla[2] : max_ele;
+			min_ele = min_ele > data[i].lla[2] ? data[i].lla[2] : min_ele;
+
+			data[i].dist = dist;
+			data[i].latlng = s;
+			ndata.push(data[i]);
+
+		}
+		this._min_ele = min_ele;
+		this._max_ele = max_ele;
+		this._dist = dist;
+		this._data = ndata;
+
 
 	},
 
@@ -479,3 +520,45 @@ L.Control.Graph.PlotSpace = L.Control.extend({
 L.control.graph.plotspace = function(options) {
     return new L.Control.Graph.PlotSpace(options);
 };
+
+
+L.Control.Graph.Data = L.Control.extend({
+	_data: [],
+
+	_x_domain_func: undefined,
+	_y_domain_func: undefined,
+
+	_x_domain: [0,0],
+	_y_domain: [0,0],
+
+	add: function(data) {
+
+	},
+
+	clear: function() {
+
+	},
+	
+	setXdomainFunc: function(func) {
+		this._domain_func = func;
+	},
+
+	/*
+	 * Computes derivative for the given Y value, storing
+	 * the result in z value
+	 * 
+	 * @param gety getter function for input
+	 * @param setz setter function for result
+	 */
+	derivative: function(gety, setz) {
+
+	},
+
+	interpolate: function() {},
+
+	preprocess: function(i,j, opts) {
+
+	}
+
+
+});
