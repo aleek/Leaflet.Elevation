@@ -302,6 +302,7 @@ L.control.graph = function(options) {
 
 L.Control.Graph.PlotSpace = L.Control.extend({
 	options: {
+		position: "topright",
 		width: 500,
 		height: 100,
 		padding_left: 20,
@@ -364,6 +365,10 @@ L.Control.Graph.PlotSpace = L.Control.extend({
 		this._graph = graph;
 		this.d3js.svg = this._graph.getSvgContainer();
 
+        this.options.xTicks = this.options.xTicks
+				|| Math.round(this.options.width / 75);
+        this.options.yTicks = this.options.yTicks
+				|| Math.round(this.options.height / 30);
 		/*
 		 * create <g> group element for the plot
 		 */
@@ -373,11 +378,11 @@ L.Control.Graph.PlotSpace = L.Control.extend({
 		/* Create scales */
 		this.d3js.x_scale = d3.scale.linear()
 			.range([0, this.options.width])
-			.domain([0,1]);
+			.domain([0,2]);
 
 		this.d3js.y_scale = d3.scale.linear()
 			.range([this.options.height, 0])
-			.domain([0,1]);
+			.domain([0,2]);
 
 		/* create X and Y axis */
 		this.d3js.x_axis = d3.svg.axis()
@@ -481,7 +486,6 @@ L.Control.Graph.PlotSpace = L.Control.extend({
 			var s = new L.LatLng(data[i].lla[1], data[i].lla[0]);
 			var e = new L.LatLng(data[i ? i - 1 : 0].lla[1], data[i ? i - 1 : 0].lla[0]);
 			var d_dist = s.distanceTo(e);
-			console.log(d_dist);
 			dist = dist + d_dist; // Math.round(d_dist / 1000 * 100000) / 100000;
 
 			/* 2. maximum elevation */
@@ -497,12 +501,70 @@ L.Control.Graph.PlotSpace = L.Control.extend({
 		this._max_ele = max_ele;
 		this._dist = dist;
 		this._data = ndata;
-
-
 	},
 
-	showPlot: function(name, x, y, opts) {
+	showPlot: function(x, y, opts) {
+		/*
+		if (typeof this._data[name] === "undefined") {
+			throw "Data "+ name +" does not exists."
+			return;
+		}*/
+		//var anim = opts.anim || this.options.animation;
+		var type = opts.type || "area";
 
+		this.setXdomain(x);
+		this.setYdomain(y);
+
+		var datum = this._data;
+		var vis = {};
+		var x_scale = this.d3js.x_scale;
+		var y_scale = this.d3js.y_scale;
+
+		if (type == "area") {
+			vis.graph = d3.svg.area()
+				.interpolate(this.options.interpolation)
+				.x(function(d) { return x_scale(x(d)) })
+				.y0(this.getHeight()) // bottom of area
+				.y1(function(d) { return y_scale(y(d)) }); // top of area
+		}
+		else if(type == "line") {
+			vis.graph = d3.svg.line()
+				.x(function(d) { return x_scale(x(d)) })
+				.y(function(d) { return y_scale(y(d)) }); // top of area
+		}
+
+		vis.path = this.d3js.g.append("path");
+		/*@TODO refactor this if statement */
+		if (type == "area") {
+			vis.path.attr("class", "area");
+		}
+
+		vis.path.datum(datum).attr("d", vis.graph);
+		if (type == "line") {
+			/* @TODO adjust styles */
+			vis.path.attr("fill", "none")
+			      .attr("stroke", "steelblue")
+			      .attr("stroke-linejoin", "round")
+			      .attr("stroke-linecap", "round")
+			      .attr("stroke-width", 1.5);
+		}
+		this._vis = vis;
+	},
+
+	setXdomain: function(func) {
+		var d = d3.extent(this._data, func);
+		this.d3js.x_scale.domain(d);
+		/* TODO animation */
+		this.html.x_axis.call(this.d3js.x_axis);
+		return d;
+	},
+
+	setYdomain: function(func) {
+		var d = d3.extent(this._data, func);
+		this.d3js.y_scale.domain(d);
+		/* TODO animation */
+		this.html.y_axis.call(this.d3js.y_axis);
+		return d;
 	},
 
 	hidePlot: function(name) {
