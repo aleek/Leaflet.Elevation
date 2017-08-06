@@ -2,7 +2,7 @@ L.Control.Graph = L.Control.extend({
     options: {
         position: "topright",
         theme: "lime-theme",
-        width: 600,
+        width: 1200,
         height: 175,
         margins: {
             top: 10,
@@ -49,13 +49,20 @@ L.Control.Graph = L.Control.extend({
 	 *       <g marker> <- mouse marker
 	 *       <rect mouse background>
 	 */
-	_h_div:                undefined,
-	  _h_svg:              undefined,
-	    _h_g:              undefined,
-	      _h_x_axis:       undefined,
-	      _h_y_axis:       undefined,
-	      _h_mouse_bg:     undefined,
-	      _h_mouse_marker: undefined,
+	_dom: {
+		div: undefined,
+		svg: undefined,
+		g: undefined,
+		x_axis: undefined,
+		y_axis: undefined
+	},
+
+	_d3js: {
+		x_scale: undefined,
+		y_scale: undefined,
+		x_axis: undefined,
+		y_axis: undefined,
+	},
 
 	/*
 	 * data sets - hashmap, where every element is in following format:
@@ -98,56 +105,56 @@ L.Control.Graph = L.Control.extend({
         opts.hoverNumber.formatter = opts.hoverNumber.formatter || this._formatter;
 
 		/* init html elements*/
-        var h_div = this._h_div = L.DomUtil.create("div", "elevation");
+        var h_div = this._dom.div = L.DomUtil.create("div", "elevation");
         L.DomUtil.addClass(h_div, opts.theme); //append theme to control
 
         var cont = d3.select(h_div);
         cont.attr("width", opts.width);
 
-        var svg = this._h_svg = cont.append("svg");
+        var svg = this._dom.svg = cont.append("svg");
         svg.attr("width", opts.width)
             .attr("class", "background")
             .attr("height", opts.height);
 
-		var g = this._h_g = svg.append("g")
+		var g = this._dom.g = svg.append("g")
 			.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 		/* Create scales */
-		var x = this._x_scale = d3.scale.linear()
+		var x = this._d3js.x_scale = d3.scale.linear()
 			.range([0, this._width()])
 			.domain([0,1]);
 
-		var y = this._y_scale = d3.scale.linear()
+		var y = this._d3js.y_scale = d3.scale.linear()
 			.range([this._height(), 0])
 			.domain([0,1]);
 
 		/* create X and Y axis */
 		/* Those two are for calucations... */
-		this._x_axis = d3.svg.axis()
-			.scale(this._x_scale)
+		this._d3js.x_axis = d3.svg.axis()
+			.scale(this._d3js.x_scale)
 			.ticks(this.options.xTicks)
 			.orient("bottom");
 
-		this._y_axis = d3.svg.axis()
-			.scale(this._y_scale)
+		this._d3js.y_axis = d3.svg.axis()
+			.scale(this._d3js.y_scale)
 			.ticks(this.options.yTicks)
 			.orient("left");
 
-		this._h_x_axis = g.append("g");
-		this._h_y_axis = g.append("g");
+		this._dom.x_axis = g.append("g");
+		this._dom.y_axis = g.append("g");
 
 		/* ...and those two are for displaying */
-		this._h_x_axis.attr("class", "x axis")
+		this._dom.x_axis.attr("class", "x axis")
 			.attr("transform", "translate(0," + this._height() + ")")
-			.call(this._x_axis)
+			.call(this._d3js.x_axis)
 			.append("text")
 			.attr("x", this._width() + 20)
 			.attr("y", 15)
 			.style("text-anchor", "end")
 			.text("km");
 
-		this._h_y_axis.attr("class", "y axis")
-			.call(this._y_axis)
+		this._dom.y_axis.attr("class", "y axis")
+			.call(this._d3js.y_axis)
 			.append("text")
 			.attr("x", -45)
 			.attr("y", 3)
@@ -187,8 +194,8 @@ L.Control.Graph = L.Control.extend({
 		var datum = this._data[name].d;
 		var vis = {};
 		vis.name = name;
-		var x_scale = this._x_scale;
-		var y_scale = this._y_scale;
+		var x_scale = this._d3js.x_scale;
+		var y_scale = this._d3js.y_scale;
 
 		if (type == "area") {
 			vis.graph = d3.svg.area()
@@ -203,7 +210,7 @@ L.Control.Graph = L.Control.extend({
 				.y(function(d) { return y_scale(y(d)) }); // top of area
 		}
 
-		vis.path = this._h_g.append("path").attr("class", "area");
+		vis.path = this._dom.g.append("path").attr("class", "area");
 		vis.path.datum(datum).attr("d", vis.graph);
 		if (type == "line") {
 			/* @TODO adjust styles */
@@ -222,9 +229,9 @@ L.Control.Graph = L.Control.extend({
 			return;
 		}
 		var d = d3.extent(this._data[name].d, func);
-		this._x_scale.domain(d);
+		this._d3js.x_scale.domain(d);
 		/* TODO animation */
-		this._h_x_axis.call(this._x_axis);
+		this._dom.x_axis.call(this._d3js.x_axis);
 		return d;
 	},
 
@@ -233,9 +240,9 @@ L.Control.Graph = L.Control.extend({
 			return;
 		}
 		var d = d3.extent(this._data[data_name].d, func);
-		this._y_scale.domain(d);
+		this._d3js.y_scale.domain(d);
 		/* TODO animation */
-		this._h_y_axis.call(this._y_axis);
+		this._dom.y_axis.call(this._d3js.y_axis);
 		return d;
 	},
 
