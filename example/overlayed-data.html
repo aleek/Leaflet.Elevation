@@ -47,6 +47,10 @@
 		map.addLayer(service).fitWorld();
 
 		graph.addData('player1', jsondata);
+		/*
+		graph.interpolateData("player1", 1000);
+		graph.showData("player1", function(d){return Math.round(d.total_dist/1000*100000)/100000;}, function(d){return d.coords.alt}, {type: "area"});
+		*/
 		//graph.setXdomain('player1', function(x) { return x.time });
 		//var bla = L.control.graph.plotspace();
 		//bla.addTo(graph);

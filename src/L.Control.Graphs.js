@@ -213,7 +213,7 @@ L.Control.Graph = L.Control.extend({
 		vis.path = this._dom.g.append("path").attr("class", "area");
 		vis.path.datum(datum).attr("d", vis.graph);
 		if (type == "line") {
-			/* @TODO adjust styles */
+			tlng/* @TODO adjust styles */
 			vis.path.attr("fill", "none")
 			      .attr("stroke", "steelblue")
 			      .attr("stroke-linejoin", "round")
@@ -273,10 +273,96 @@ L.Control.Graph = L.Control.extend({
 			data.max_ele = data.max_ele < data.d[i].lla[2] ? data.d[i].lla[2] : data.max_ele;
 
 			data.d[i].dist = data.dist;
-			data.d[i].latlng = s;
+			data.d[i].coords = s;
+		}
+		console.log("Total total_dist:. " + data.d[data.d.length].dist );
+	},
+
+	interpolated: [],
+
+	interpolateData: function(name, resolution) {
+		if( typeof this._data[name] === "undefined") {
+			return;
+		}
+		var opts = this.options;
+		var data = this._data[name];
+		var interpolated = [];
+		var id = 0;
+		
+		var item = Object.assign({}, data.d[0]);
+		item.id = id;
+		item.coords = new L.LatLng(item.lla[1], item.lla[0], item.lla.length == 3 ? item.lla[2] : -20000);
+		delete item.lla;
+		item.total_dist = 0;
+		item.dist = 0;
+		item.interpolated = false;
+		interpolated.push(item);
+		id++;
+
+		var prev_item = item;
+
+		for (var i=1; i<data.d.length; i++) {
+			var item = Object.assign({}, data.d[i]);
+			item.id = id;
+			id++;
+			item.coords = new L.LatLng(item.lla[1], item.lla[0], item.lla.length == 3 ? item.lla[2] : -20000);
+			delete item.lla;
+			item.dist = item.coords.distanceTo(prev_item.coords);
+			item.total_dist = prev_item.total_dist + item.dist;
+			item.interpolated = false;
+
+			/* insert interpolated items, if the distance is too big */
+			if (item.dist > resolution) {
+				var n_interp = Math.floor(item.dist / resolution) + 1;
+
+				for (var j=1; j<n_interp; j++) {
+					var lat = ((n_interp - j)*prev_item.coords.lat + j*item.coords.lat)/n_interp;
+					var lng = ((n_interp - j)*prev_item.coords.lng + j*item.coords.lng)/n_interp;
+					var alt = ((n_interp - j)*prev_item.coords.alt + j*item.coords.alt)/n_interp;
+
+					var ii = {}; // interpolated item
+					ii.id = id;
+					id++;
+					ii.coords = new L.LatLng(lat, lng, alt);
+					ii.dist = interpolated[interpolated.length-1].coords.distanceTo(ii.coords);
+					ii.total_dist = interpolated[interpolated.length-1].total_dist + ii.dist;
+					ii.interpolated = true;
+					interpolated.push(ii);
+				}
+			}
+			/* 
+			 * After we raped the array by inserting additional elements,
+			 * we have to adjust the next one
+			 */
+			item.dist = interpolated[interpolated.length-1].coords.distanceTo(item.coords);
+			interpolated.push(item);
+			prev_item.next_real_item = interpolated.length-1;
+			prev_item = item;
+		}
+
+		this._data[name].d = interpolated;
+
+		var new_total_dist = 0.0;
+		for (var i=0; i<interpolated.length; i++) {
+			new_total_dist += interpolated[i].dist;
+		}
+		this._data[name].interpolated_dist = new_total_dist;
+		console.log("Interpolated total_dist: " + new_total_dist );
+	},
+
+	calculateDerivative: function(name) {
+		if( typeof this._data[name] === "undefined") {
+			return;
+		}
+		var data = this._data[name];
+
+		for (var i=1; i<data.length; i++) {
+			var pos1 = data[i-1];
+			var pos2 = data[i];
+			data[i].tg =  0;
+
 		}
 	},
-		
 });
 
 L.control.graph = function(options) {
