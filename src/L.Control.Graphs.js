@@ -3,7 +3,7 @@ L.Control.Graph = L.Control.extend({
         position: "topright",
         theme: "lime-theme",
         width: 1200,
-        height: 175,
+        height: 300,
         margins: {
             top: 10,
             right: 20,
@@ -188,8 +188,8 @@ L.Control.Graph = L.Control.extend({
 		var anim = opts.anim || this.options.animation;
 		var type = opts.type || "area";
 
-		this.setXdomain(name, x);
-		this.setYdomain(name, y);
+		//this.setXdomain(name, x);
+		//this.setYdomain(name, y);
 
 		var datum = this._data[name].d;
 		var vis = {};
@@ -210,10 +210,16 @@ L.Control.Graph = L.Control.extend({
 				.y(function(d) { return y_scale(y(d)) }); // top of area
 		}
 
-		vis.path = this._dom.g.append("path").attr("class", "area");
+		if (type == "area") {
+			vis.path = this._dom.g.append("path").attr("class", "area");
+		}
+		else
+		{
+			vis.path = this._dom.g.append("path");
+		}
 		vis.path.datum(datum).attr("d", vis.graph);
 		if (type == "line") {
-			tlng/* @TODO adjust styles */
+			/* @TODO adjust styles */
 			vis.path.attr("fill", "none")
 			      .attr("stroke", "steelblue")
 			      .attr("stroke-linejoin", "round")
@@ -301,6 +307,9 @@ L.Control.Graph = L.Control.extend({
 
 		var prev_item = item;
 
+		/* If the distance between two points is greater than resolution,
+		 * we need to insert couple of elements, by interpolation
+		 */
 		for (var i=1; i<data.d.length; i++) {
 			var item = Object.assign({}, data.d[i]);
 			item.id = id;
@@ -354,14 +363,28 @@ L.Control.Graph = L.Control.extend({
 		if( typeof this._data[name] === "undefined") {
 			return;
 		}
-		var data = this._data[name];
+		var data = this._data[name].d;
 
+		for (var i=5; i<data.length-5; i++) {
+			var pos1 = data[i-5];
+			var pos2 = data[i+5];
+			data[i].tg =  (pos2.coords.alt - pos1.coords.alt)/(pos2.dist);
+		}
+		for (var i=0; i<5; i++) {
+			data[i].tg = 0; //data[5];
+		}
+		for (var i=data.length-5; i<data.length; i++) {
+			data[i].tg = 0; //data[data.length-6];
+		}
+		
+/*
 		for (var i=1; i<data.length; i++) {
 			var pos1 = data[i-1];
 			var pos2 = data[i];
-			data[i].tg =  0;
-
+			data[i].tg =  (pos2.coords.alt - pos1.coords.alt)/(pos2.dist);
 		}
+		data[0].tg = data[1].tg;
+*/
 	},
 });
 
