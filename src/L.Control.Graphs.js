@@ -284,6 +284,49 @@ L.Control.Graph = L.Control.extend({
 		console.log("Total total_dist:. " + data.d[data.d.length].dist );
 	},
 
+	generateSin: function(name) {
+		if( typeof this._data[name] === "undefined") {
+			return;
+		}
+		var opts = this.options;
+		var data = this._data[name];
+		var interpolated = [];
+		var id = 0;
+		
+		var item = Object.assign({}, data.d[0]);
+		item.id = id;
+		item.coords = new L.LatLng(item.lla[1], item.lla[0], item.lla.length == 3 ? item.lla[2] : -20000);
+		delete item.lla;
+		item.total_dist = 0;
+		item.dist = 0;
+		item.coords.alt = 0;
+		item.interpolated = false;
+		interpolated.push(item);
+		id++;
+
+		var prev_item = item;
+
+		/* If the distance between two points is greater than resolution,
+		 * we need to insert couple of elements, by interpolation
+		 */
+		for (var i=1; i<data.d.length; i++) {
+			var item = Object.assign({}, data.d[i]);
+			item.id = id;
+			id++;
+			item.coords = new L.LatLng(item.lla[1], item.lla[0], item.lla.length == 3 ? item.lla[2] : -20000);
+			delete item.lla;
+			item.dist = 10; 
+			item.total_dist = prev_item.total_dist + item.dist;
+			item.coords.alt = Math.sin(item.total_dist/200);
+			item.interpolated = false;
+			interpolated.push(item);
+			prev_item.next_real_item = interpolated.length-1;
+			prev_item = item;
+		}
+
+		this._data[name].d = interpolated;
+	},
+
 	interpolated: [],
 
 	interpolateData: function(name, resolution) {
@@ -359,22 +402,25 @@ L.Control.Graph = L.Control.extend({
 		console.log("Interpolated total_dist: " + new_total_dist );
 	},
 
-	calculateDerivative: function(name) {
+	calculateDerivative: function(name, spread) {
 		if( typeof this._data[name] === "undefined") {
 			return;
 		}
 		var data = this._data[name].d;
 
-		for (var i=5; i<data.length-5; i++) {
-			var pos1 = data[i-5];
-			var pos2 = data[i+5];
-			data[i].tg =  (pos2.coords.alt - pos1.coords.alt)/(pos2.dist);
+		for (var i=spread; i<data.length-spread; i++) {
+			var pos1 = data[i-spread];
+			var pos2 = data[i+spread];
+			data[i].tg =  ((pos2.coords.alt - pos1.coords.alt)/(pos2.dist)) * 1000;
+			data[i].gradient =  data[i].tg&(~0x1) ;
 		}
-		for (var i=0; i<5; i++) {
-			data[i].tg = 0; //data[5];
+		for (var i=0; i<spread; i++) {
+			data[i].tg = data[spread].tg;
+			data[i].gradient =  data[spread].gradient ;
 		}
-		for (var i=data.length-5; i<data.length; i++) {
-			data[i].tg = 0; //data[data.length-6];
+		for (var i=data.length-spread; i<data.length; i++) {
+			data[i].tg = data[data.length-spread-1].tg;
+			data[i].gradient =  data[data.length-spread-1].gradient ;
 		}
 		
 /*
@@ -386,6 +432,26 @@ L.Control.Graph = L.Control.extend({
 		data[0].tg = data[1].tg;
 */
 	},
+
+	_zeros: [],
+	findAllZerosOfAFunction: function(name) {
+		if( typeof this._data[name] === "undefined") {
+			return;
+		}
+		var data = this._data[name].d;
+
+		for (var i=1; i<data.length; i++) {
+			if ((data[i-1].tg * data[i].tg) < 0) {
+				this._zeros.push(i-1);
+				/*
+				this._dom.append('line').attr({
+					'x1': 
+				});*/
+			}
+
+		}
+
+	}
 });
 
 L.control.graph = function(options) {

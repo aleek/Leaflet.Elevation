@@ -27,7 +27,7 @@
 			integrity="sha512-sIPSXEX730B6EcdQyVPmIGp7f7ZrxIuECnkwYtPpEltG6NqOVtmBNoxHkMamNsAOHLMnDFaUoJYA4PWtzNZDuA=="
 		crossorigin=""></script>
 	<script type="text/javascript" src="../src/L.Control.Graphs.js"></script>
-	<script type="text/javascript" src="../reja.geojson"></script>
+	<script type="text/javascript" src="../reja_cropped.geojson"></script>
 </head>
 <body>
 
@@ -47,6 +47,22 @@
 		map.addLayer(service).fitWorld();
 
 		graph.addData('player1', jsondata);
+		//graph.interpolateData("player1", 100);
+		graph.generateSin('player1');
+
+		/* show the elevation diagram */
+		graph.setXdomain("player1", function(d){return Math.round(d.total_dist/1000*100000)/100000;});
+		graph.setYdomain("player1", function(d){return d.coords.alt});
+		graph.showData("player1", function(d){return Math.round(d.total_dist/1000*100000)/100000;}, function(d){return d.coords.alt}, {type: "area"});
+
+
+		graph.calculateDerivative("player1",1);
+		graph.setYdomain("player1", function(d){return d.tg});
+		graph.showData("player1", function(d){return Math.round(d.total_dist/1000*100000)/100000;}, function(d){return 0}, {type: "line"});
+
+		graph.showData("player1", function(d){return Math.round(d.total_dist/1000*100000)/100000;}, function(d){return d.tg}, {type: "line"});
+		graph.showData("player1", function(d){return Math.round(d.total_dist/1000*100000)/100000;}, function(d){return d.gradient}, {type: "line"});
+
 		/*
 		graph.interpolateData("player1", 1000);
 		graph.showData("player1", function(d){return Math.round(d.total_dist/1000*100000)/100000;}, function(d){return d.coords.alt}, {type: "area"});
