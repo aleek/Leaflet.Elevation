@@ -104,21 +104,6 @@ L.Control.Graph = L.Control.extend({
         opts.yTicks = opts.yTicks || Math.round(this._height() / 30);
         opts.hoverNumber.formatter = opts.hoverNumber.formatter || this._formatter;
 
-		/* init html elements*/
-        var h_div = this._dom.div = L.DomUtil.create("div", "elevation");
-        L.DomUtil.addClass(h_div, opts.theme); //append theme to control
-
-        var cont = d3.select(h_div);
-        cont.attr("width", opts.width);
-
-        var svg = this._dom.svg = cont.append("svg");
-        svg.attr("width", opts.width)
-            .attr("class", "background")
-            .attr("height", opts.height);
-
-		var g = this._dom.g = svg.append("g")
-			.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
 		/* Create scales */
 		var x = this._d3js.x_scale = d3.scale.linear()
 			.range([0, this._width()])
@@ -140,6 +125,21 @@ L.Control.Graph = L.Control.extend({
 			.ticks(this.options.yTicks)
 			.orient("left");
 
+		/* init html elements*/
+        var h_div = this._dom.div = L.DomUtil.create("div", "elevation");
+        L.DomUtil.addClass(h_div, opts.theme); //append theme to control
+
+        var cont = d3.select(h_div);
+        cont.attr("width", opts.width);
+
+        var svg = this._dom.svg = cont.append("svg");
+        svg.attr("width", opts.width)
+            .attr("class", "background")
+            .attr("height", opts.height);
+
+		var g = this._dom.g = svg.append("g")
+			.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
 		this._dom.x_axis = g.append("g");
 		this._dom.y_axis = g.append("g");
 
@@ -160,6 +160,10 @@ L.Control.Graph = L.Control.extend({
 			.attr("y", 3)
 			.style("text-anchor", "end")
 			.text("m");
+
+		this._dom.gradient = g.append("linearGradient")
+			.attr("id", "ele-grad1")
+			.attr("gradientUnits", "userSpaceOnUse");
 
 		return h_div;
 	},
@@ -198,6 +202,21 @@ L.Control.Graph = L.Control.extend({
 		var y_scale = this._d3js.y_scale;
 
 		if (type == "area") {
+			this._dom.gradient.attr("x1", 0).attr("y1", 0)
+				.attr("x2", 900).attr("y2", 0)
+				.selectAll("stop")
+				.data([
+					{offset: "0%", color: "yellow"},
+					{offset: "50%", color: "gray"},
+					{offset: "100%", color: "red"}
+				])
+				.enter().append("stop")
+      			.attr("offset", function(d) { return d.offset; })
+      			.attr("stop-color", function(d) { return d.color; });
+
+		}
+
+		if (type == "area") {
 			vis.graph = d3.svg.area()
 				.interpolate(this.options.interpolation)
 				.x(function(d) { return x_scale(x(d)) })
@@ -211,7 +230,7 @@ L.Control.Graph = L.Control.extend({
 		}
 
 		if (type == "area") {
-			vis.path = this._dom.g.append("path").attr("class", "area");
+			vis.path = this._dom.g.append("path"); //.attr("class", "area");
 		}
 		else
 		{
@@ -225,6 +244,11 @@ L.Control.Graph = L.Control.extend({
 			      .attr("stroke-linejoin", "round")
 			      .attr("stroke-linecap", "round")
 			      .attr("stroke-width", 1.5);
+		}
+		else
+		{
+			vis.path.attr("fill", "url(#ele-grad1)");
+
 		}
 		this._data_vis[name] = vis;
 	},
